@@ -1,0 +1,55 @@
+[package]
+name = "open_world_game"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97.1"
+license = "MIT"
+description = "Open-source, cross-platform open-world driving game built on Bevy (v0.1 vertical slice)."
+readme = "README.md"
+publish = false
+default-run = "open_world_game"
+
+[lib]
+name = "open_world_game"
+path = "src/lib.rs"
+
+[[bin]]
+name = "open_world_game"
+path = "src/main.rs"
+
+[dependencies]
+# Pinned to an exact stable Bevy release. Default features are disabled so we do not pull in
+# audio (ALSA on Linux) or gamepad support (libudev on Linux), neither of which v0.1 uses.
+# Everything listed here is platform-neutral; the Linux-only windowing backend is added below.
+bevy = { version = "=0.20.1", default-features = false, features = [
+    "std",
+    "default_app",
+    "multi_threaded",
+    "bevy_winit",
+    "3d_bevy_render",
+    "ui_api",
+    "ui_bevy_render",
+    "default_font",
+] }
+thiserror = "2"
+
+# macOS (Metal) and Windows (DX12/Vulkan) need no extra features. Linux is not a v0.1 target,
+# but contributors and headless CI-style checks still need a windowing backend to compile.
+[target.'cfg(target_os = "linux")'.dependencies]
+bevy = { version = "=0.20.1", default-features = false, features = ["x11"] }
+
+[profile.dev]
+opt-level = 1
+
+# Bevy is very slow unoptimised; optimise dependencies even in debug builds.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+[lints.clippy]
+# Bevy system signatures routinely trip these two; they are noise for ECS code.
+type_complexity = "allow"
+too_many_arguments = "allow"
